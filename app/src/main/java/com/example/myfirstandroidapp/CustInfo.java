@@ -31,7 +31,6 @@ public class CustInfo extends ListFragment {
     //@Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        savedInstanceState.getParcelableArrayList(MainActivity.getEXTRA_DATA());
         //Returning the layout file after inflating
         //Change R.layout.tab1 in you classes
         return inflater.inflate(R.layout.activity_cust_tab, container, false);
