@@ -2,7 +2,9 @@ package com.example.myfirstandroidapp;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager.widget.ViewPager;
@@ -10,15 +12,23 @@ import com.example.myfirstandroidapp.model.APIResponse;
 import com.example.myfirstandroidapp.model.OrderHistory;
 import com.example.myfirstandroidapp.retrofit.API;
 import com.google.android.material.tabs.TabLayout;
+import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,10 +47,16 @@ public class TabActivity extends AppCompatActivity implements TabLayout.OnTabSel
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tab_screen);
 
-        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
+            @Override
+            public void log(String message) {
+                Log.d("HTTP", message);
+            }
+        });
         interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient client = new OkHttpClient.Builder()
+
                 .addInterceptor(interceptor).build();
 
 
@@ -83,6 +99,8 @@ public class TabActivity extends AppCompatActivity implements TabLayout.OnTabSel
 
 
         api.submit(customerID, firstName, zipCode, lastName)
+                .subscribeOn(Schedulers.io()
+                )
                 .flatMap(new Function<List<APIResponse>, ObservableSource<?>>() {
                     @Override
                     public ObservableSource<?> apply(List<APIResponse> apiResponses) throws Exception {
@@ -93,29 +111,49 @@ public class TabActivity extends AppCompatActivity implements TabLayout.OnTabSel
                             public ObservableSource<?> apply(List<OrderHistory> orderHistories) throws Exception {
                                 map.put(1, orderHistories);
                                 map.put(2, new ArrayList<>());
-                                //Creating our pager adapter
-                                PagerAdapter adapter = new PagerAdapter(TabActivity.this, getSupportFragmentManager(), tabLayout.getTabCount(), map);
 
-                                //Adding adapter to pager
-                                viewPager.setAdapter(adapter);
-
-                                viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
-                                dialog.dismiss();
                                 return null;
                             }
                         });
                     }
                 })
-                .doOnError(new Consumer<Throwable>() {
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Object>() {
                     @Override
-                    public void accept(Throwable throwable) throws Exception {
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(Object value) {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
                         dialog.dismiss();
                         new AlertDialog.Builder(TabActivity.this)
                                 .setTitle("Error")
-                                .setMessage("An error occurred")
-                                .setPositiveButton("OK", null)
-                                .create()
+                                .setMessage("An error occurred, Please try again later")
+                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        finish();
+                                    }
+                                })
+                                .setCancelable(false)
                                 .show();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        //Creating our pager adapter
+                        PagerAdapter adapter = new PagerAdapter(TabActivity.this, getSupportFragmentManager(), tabLayout.getTabCount(), map);
+
+                        //Adding adapter to pager
+                        viewPager.setAdapter(adapter);
+                        viewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
+                        dialog.dismiss();
                     }
                 });
 
