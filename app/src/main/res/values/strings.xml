@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">My First Android App</string>
+    <string name="assalamu_alaikum_wa_rahamatullahi_wa_barakatuhu">Assalamu alaikum wa Rahamatullahi wa Barakatuhu!
+    </string>
+    <string name="txtCID">Enter a Customer Id</string>
+    <string name="btnSubmit">Submit</string>
+    <string name="txtZIP">Enter a Zip Code</string>
+    <string name="txtLN">Enter a Last Name</string>
+    <string name="txtFN">Enter a First Name</string>
+    <string name="txtEM">Enter a Email id</string>
+    <string name="title_activity_cust_info">CustInfo</string>
+    <string name="tab_text_1">Customer</string>
+    <string name="tab_text_2">Orders</string>
+    <string name="tab_text_3">Cases</string>
+</resources>
